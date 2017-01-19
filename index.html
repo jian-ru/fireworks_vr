@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>three.js webvr - cubes</title>
+		<title>WebVR Firework</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 		<style>
@@ -22,6 +22,7 @@
 		<script src="js/VRControls.js"></script>
 		<script src="js/VREffect.js"></script>
 		<script src="js/WebVR.js"></script>
+		<script src="js/Firework.js"></script>
 
 		<script type="x-shader/x-vertex" id="vertexShader">
 			//
@@ -288,6 +289,9 @@
 			var timeEllapsed = 0.0;
 			var clock = new THREE.Clock();
 
+			var fireworkTimer = 0.0;
+			var fireworks = [];
+			
 			var container;
 			var camera, scene, raycaster, renderer;
 			var effect, controls;
@@ -311,13 +315,13 @@
 				info.style.top = '10px';
 				info.style.width = '100%';
 				info.style.textAlign = 'center';
-				info.innerHTML = '<a href="http://threejs.org" target="_blank">three.js</a> webgl - interactive cubes';
+				info.innerHTML = '<a href="http://jian-ru.github.io" target="_blank">Jian Ru</a> WebVR Firework';
 				container.appendChild( info );
 
 				scene = new THREE.Scene();
 
 				// Camera
-				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 100 );
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 100 );
 				camera.position.set(0, -5, 2);
 				camera.lookAt(new THREE.Vector3(0, -5, 0));
 				scene.add( camera );
@@ -434,6 +438,9 @@
 				var delta = clock.getDelta();
 				timeEllapsed += delta;
 				
+				updateRockets(delta);
+				launchRocket(delta);
+				
 				animateCamera();
 				render();
 
@@ -456,6 +463,47 @@
 				var radius = 8.0;
 				var elevation = -5.0 + 2.0 * (1.0 + Math.sin(0.5 * timeEllapsed));
 				camera.position.set(radius * Math.sin(phi), elevation, radius * Math.cos(phi));
+			}
+			
+			function launchRocket(deltaTime)
+			{
+				fireworkTimer -= deltaTime;
+				if (fireworkTimer < 0.0)
+				{
+					fireworkTimer = 1.0;
+					
+					var firework = new Firework(
+						new THREE.Vector3(
+							(Math.random() * 2.0 - 1.0) * 15.0,
+							-3.0,
+							(Math.random() * 2.0 - 1.0) * 15.0),
+						new THREE.Vector3(0.0, (Math.random() * 0.5 + 0.5) * 20.0, 0.0),
+						scene
+					);
+					
+					fireworks.push(firework);
+				}
+			}
+			
+			function updateRockets(deltaTime)
+			{
+				for (var i = 0; i < fireworks.length; ++i)
+				{
+					fireworks[i].update(deltaTime);
+					
+					if (fireworks[i].finished)
+					{
+						fireworks[i] = fireworks[fireworks.length - 1];
+						fireworks.pop();
+						--i;
+						continue;
+					}
+					
+					if (!fireworks[i].exploded && fireworks[i].rocket.userData.velocity.y < 0.0)
+					{
+						fireworks[i].explode();
+					}
+				}
 			}
 
 		</script>
